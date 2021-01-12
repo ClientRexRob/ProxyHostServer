@@ -68,11 +68,11 @@ functions:
     events: 
       - websocket: 
           route: $default #extr route not needed?
-  helloHandler:
-    handler: handler.helloHandler
+  sendRequestHandler:
+    handler: handler.sendRequestHandler
     events:
       - websocket:
-          route: $hello #trig if request.body.action === hello
+          route: request #trig if request.body.action === hello
 
   helloGet:
     handler: handler.helloGet

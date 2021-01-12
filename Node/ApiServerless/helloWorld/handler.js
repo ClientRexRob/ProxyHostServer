@@ -3,8 +3,6 @@
 
 const { Lambda } = require('aws-sdk');
 var AWS = require("aws-sdk");
-const { MessageChannel,receiveMessageOnPort } = require('worker_threads');
-const {port1,port3001 } = new MessageChannel();
 
 const lambda = new Lambda({
   apiVersion:'2015-03-31',
@@ -12,7 +10,7 @@ const lambda = new Lambda({
   ?'http://localhost:3002'
   :'https://lambda.us-east-1.amazonaws.com',
 })
-const establishConnection = (url,connectionId)=>
+const forwardRequestToTarget = (url,connectionId)=>
 new Promise((resolve,reject) =>{
   let apigatewaymanagementapi = new AWS.ApiGatewayManagementApi({
     apiVersion: '2018-11-29',
@@ -47,9 +45,10 @@ new Promise((resolve,reject) => {
   })
 });
 module.exports.connectionHandler = async (event,target)=>{
-target.identity = 
-target = {data:target.identity};
+target.identity = event.requestContext.domainName;
+target = event.path;
 console.log(target);
+
 }
 module.exports.disconnectHandler = async (event,context) =>{
 
@@ -67,15 +66,27 @@ module.exports.defaultHandler = async (event,payload) =>{
     message: payload
   }
 }
-module.exports.helloHandler = async (event,payload) =>{
+module.exports.sendRequestHandler = async (event,payload) =>{
   //const body = JSON.stringify(event,null,2);
-  //const response= await lambda.invoke(body).promise();
-  payload= JSON.stringify({data:event.body});
-  console.log(payload);
-  return{
-    statusCode:200,
-    data:payload
+  const params = {
+    FunctionName:"sendRequestHandler",
+    InvocationType:"RequestResponse",
+    Url:event["event"],
+    Event:event["action"],
+    Payload: JSON.stringify(payload),
   };
+
+  //const response = await lambda.invoke(params).promise();
+
+  //const response= await lambda.invoke(body).promise();
+  // payload= JSON.stringify({
+  // action:"request",
+  // data:event.body
+  // });
+  //const connectionId = event.requestContext.connectionId;
+  //const response = await forwardRequestToTarget(target.identity,connectionId,payload);
+  console.log(params);
+ 
 };
 module.exports.helloPost = async(event, context)=>{
     context = {
